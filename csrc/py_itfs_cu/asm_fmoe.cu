@@ -832,9 +832,11 @@ void fmoe_fp8_blockscale_g1u1(torch::Tensor& out,               // [token_cnt, d
     int inter_dim            = down.size(2);
     int sub_X_cnt            = sorted_expert_ids.size(0);
     const char* enable_vskip = std::getenv("AITER_ENABLE_VSKIP");
+    printf("AITER_ENABLE_VSKIP %s inter_dim %d sub_X_cnt %d fc_scale_blkn %d fc_scale_blkk %d \n", enable_vskip, inter_dim, sub_X_cnt, fc_scale_blkn, fc_scale_blkk);
 
-    if(out.dtype() == at::ScalarType::BFloat16 && inter_dim % 256 == 0 && fc_scale_blkn == 128 &&
-       fc_scale_blkk == 128)
+    if(out.dtype() == at::ScalarType::BFloat16 
+       // && inter_dim % 256 == 0 && fc_scale_blkn == 128 &&  fc_scale_blkk == 128
+    )
     {
         if(activation == ActivationType::Silu)
             config_map = &cfg_fmoe_bf16_blockscaleFp8_g1u1_silu;
