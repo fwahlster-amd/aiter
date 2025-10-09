@@ -236,12 +236,15 @@ __mds = {}
 @torch_compile_guard()
 def get_module_custom_op(md_name: str) -> None:
     global __mds
+    logger.info(f"get_module_custom_op(md_name: {md_name}): __mds={hex(id(__mds))}")
     if md_name not in __mds:
         if "AITER_JIT_DIR" in os.environ:
-            __mds[md_name] = importlib.import_module(md_name)
+            imported = importlib.import_module(md_name)
+            __mds[md_name] = imported
         else:
-            __mds[md_name] = importlib.import_module(f"{__package__}.{md_name}")
-        logger.info(f"import [{md_name}] under {__mds[md_name].__file__}")
+            imported = importlib.import_module(f"{__package__}.{md_name}")
+            __mds[md_name] = imported
+        logger.info(f"import [{md_name}] under {__mds[md_name].__file__}={hex(id(imported))}")
     return
 
 

@@ -223,6 +223,7 @@ class FMoeKernel
             gdz = 1;
         }
 
+        std::cout << name << "()" << std::endl;
         std::cout << "args.ptr_STP: " << args.ptr_STP << std::endl;
         std::cout << "args.ptr_SW: " << args.ptr_SW << std::endl;
         std::cout << "args.ptr_SEP: " << args.ptr_SEP << std::endl;
