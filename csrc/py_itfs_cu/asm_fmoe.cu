@@ -80,6 +80,7 @@ class FMoeKernel
     bool is_int4                = false;
     uint32_t num_persistent_tgs = 0;
     const char* name            = nullptr;
+    std::string path;
 
     public:
     FMoeKernel(const char* name,
@@ -88,15 +89,20 @@ class FMoeKernel
                uint32_t num_persistent_tgs = 0)
     {
         const char* AITER_ASM_DIR = std::getenv("AITER_ASM_DIR");
-        std::cout << "[aiter] hipModuleLoad: " << (std::string(AITER_ASM_DIR) + hsaco).c_str()
+        path = std::string(AITER_ASM_DIR) + hsaco;
+        std::cout << "[aiter] hipModuleLoad: " << path.c_str()
                   << " GetFunction: " << name;
-        HIP_CALL(hipModuleLoad(&module, (std::string(AITER_ASM_DIR) + hsaco).c_str()));
+        HIP_CALL(hipModuleLoad(&module, path.c_str()));
         HIP_CALL(hipModuleGetFunction(&kernel_func, module, name));
-        std::cout << " Success" << std::endl;
+        std::cout << " Success [" << module << ":" << kernel_func << "]" << std::endl;
         this->sub_GU             = sub_GU;
         this->num_persistent_tgs = num_persistent_tgs;
         this->name               = name;
     };
+
+    ~FMoeKernel() {
+        std::cout << "~FMoeKernel: " << path << std::endl;
+    }
 
     const char* get_name() const { return name; }
     int get_num_persistent_tgs() { return num_persistent_tgs; }
@@ -216,25 +222,29 @@ class FMoeKernel
             gdy = sub_X_cnt;
             gdz = 1;
         }
-        // std::cout << "sub_GU: " << sub_GU << std::endl;
-        // std::cout << "args.dim: " << args.dim << std::endl;
-        // std::cout << "args.inter_dim: " << args.inter_dim << std::endl;
-        // std::cout << "args.token_cnt: " << args.token_cnt << std::endl;
-        // std::cout << "args.eprt_cnt: " << args.eprt_cnt << std::endl;
-        // std::cout << "args.stride_X: " << args.Xs << std::endl;
-        // std::cout << "args.stride_GU: " << args.GUs << std::endl;
-        // std::cout << "args.stride_D: " << args.Ds << std::endl;
-        // std::cout << "args.stride_O: " << args.Os << std::endl;
-        // std::cout << "args.stride_expert_GU: " << args.eGUs << std::endl;
-        // std::cout << "args.stride_expert_D: " << args.eDs << std::endl;
-        // std::cout << "args.stride_expert_GUDQN: " << args.eGUQs << std::endl;
-        // std::cout << "args.stride_expert_DDQN: " << args.eDQs << std::endl;
-        // std::cout << "args.stride_expert_SMTDQN: " << args.eSMQs << std::endl;
-        // std::cout << "args.topk: " << args.topk << std::endl;
-        // std::cout << "args.ps_deno: " << args.ps_deno << std::endl;
-        // std::cout << "args.total_tgs: " << args.total_tgs << std::endl;
-        // std::cout << "gdx: " << gdx << std::endl;
-        // std::cout << "gdy: " << gdy << std::endl;
+
+        std::cout << "args.ptr_STP: " << args.ptr_STP << std::endl;
+        std::cout << "args.ptr_SW: " << args.ptr_SW << std::endl;
+        std::cout << "args.ptr_SEP: " << args.ptr_SEP << std::endl;
+        std::cout << "sub_GU: " << sub_GU << std::endl;
+        std::cout << "args.dim: " << args.dim << std::endl;
+        std::cout << "args.inter_dim: " << args.inter_dim << std::endl;
+        std::cout << "args.token_cnt: " << args.token_cnt << std::endl;
+        std::cout << "args.eprt_cnt: " << args.eprt_cnt << std::endl;
+        std::cout << "args.stride_X: " << args.Xs << std::endl;
+        std::cout << "args.stride_GU: " << args.GUs << std::endl;
+        std::cout << "args.stride_D: " << args.Ds << std::endl;
+        std::cout << "args.stride_O: " << args.Os << std::endl;
+        std::cout << "args.stride_expert_GU: " << args.eGUs << std::endl;
+        std::cout << "args.stride_expert_D: " << args.eDs << std::endl;
+        std::cout << "args.stride_expert_GUDQN: " << args.eGUQs << std::endl;
+        std::cout << "args.stride_expert_DDQN: " << args.eDQs << std::endl;
+        std::cout << "args.stride_expert_SMTDQN: " << args.eSMQs << std::endl;
+        std::cout << "args.topk: " << args.topk << std::endl;
+        std::cout << "args.ps_deno: " << args.ps_deno << std::endl;
+        std::cout << "args.total_tgs: " << args.total_tgs << std::endl;
+        std::cout << "gdx: " << gdx << std::endl;
+        std::cout << "gdy: " << gdy << std::endl;
 
         const at::cuda::OptionalCUDAGuard device_guard(device_of(input));
         const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
