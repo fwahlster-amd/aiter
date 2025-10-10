@@ -836,7 +836,7 @@ void fmoe_fp8_blockscale_g1u1(torch::Tensor& out,               // [token_cnt, d
     int sub_X_cnt            = sorted_expert_ids.size(0);
     const char* enable_vskip = std::getenv("AITER_ENABLE_VSKIP");
 
-    if(out.dtype() == at::ScalarType::BFloat16 && inter_dim % 256 == 0 && fc_scale_blkn == 128 &&
+    if(out.dtype() == at::ScalarType::BFloat16 && inter_dim % 128 == 0 && fc_scale_blkn == 128 &&
        fc_scale_blkk == 128)
     {
         if(activation == ActivationType::Silu)
@@ -848,6 +848,7 @@ void fmoe_fp8_blockscale_g1u1(torch::Tensor& out,               // [token_cnt, d
                 false, __func__, "Unsupported activation type for fmoe_fp8_blockscale_g1u1");
 
         impl_ptr = get_heuristic_kernel(inter_dim, sorted_expert_ids.size(0), config_map, 0, kernel_name);
+        TORCH_CHECK(impl_ptr != nullptr, __func__, "Unsupported fmoe_fp8_blockscale_g1u1 variant");
 
         impl_ptr->launch_kernel<uint8_t, uint16_t, false>(out,
                                                           input,
