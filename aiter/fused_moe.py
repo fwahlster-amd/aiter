@@ -457,7 +457,7 @@ def get_2stage_cfgs(
             in fused_moe_1stage_dict[get_gfx()]
         ):
             if q_type == QuantType.per_1x128:
-                run_1stage = True and (inter_dim % 256 == 0) and (token > 31)
+                run_1stage = True and (inter_dim % 128 == 0) and (token > 31)
             elif q_type == QuantType.per_Token and q_dtype_w in [dtypes.i8, dtypes.fp8]:
                 run_1stage = token > 32
             else:
