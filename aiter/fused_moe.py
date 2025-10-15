@@ -484,7 +484,7 @@ def get_2stage_cfgs(
     )
 
     if (
-        "ck" in kernelName1
+        "moe_ck" in kernelName1
         or q_dtype_w
         in [
             dtypes.bf16,
