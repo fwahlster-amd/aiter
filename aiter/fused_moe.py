@@ -457,7 +457,7 @@ def get_2stage_cfgs(
             in fused_moe_1stage_dict[get_gfx()]
         ):
             if q_type == QuantType.per_1x128:
-                run_1stage = True and (inter_dim % 128 == 0) and (token > 31)
+                run_1stage = (inter_dim % 128 == 0)
             elif q_type == QuantType.per_Token and q_dtype_w in [dtypes.i8, dtypes.fp8]:
                 run_1stage = token > 32
             else:
@@ -482,6 +482,31 @@ def get_2stage_cfgs(
     logger.info(
         f"[fused_moe] using {'1stage' if run_1stage else '2stage'} {'default' if cfg is None else tag} for {keys} "
     )
+
+    if("_ZN5aiter" in kernelName1):
+        # TODO: remove when stage2 support more size
+        tmpList = [32, 64, 128]
+        if block_m not in tmpList:
+            tag = ""
+            block_m = ([el for el in tmpList if block_m < el] + [128])[0]
+
+        return MOEMetadata(
+            functools.partial(
+                asm_stage1,
+                kernelName=kernelName1,
+                activation=activation,
+                quant_type=q_type,
+            ),
+            functools.partial(
+                aiter.ck_moe_stage2_fwd,
+                kernelName=kernelName2,
+                activation=activation,
+                quant_type=q_type,
+            ),
+            block_m,
+            ksplit,
+            run_1stage,
+        )
 
     if (
         "moe_ck" in kernelName1
@@ -512,30 +537,8 @@ def get_2stage_cfgs(
             ksplit,
             run_1stage,
         )
-
-    # TODO: remove when stage2 support more size
-    tmpList = [32, 64, 128]
-    if block_m not in tmpList:
-        tag = ""
-        block_m = ([el for el in tmpList if block_m < el] + [128])[0]
-
-    return MOEMetadata(
-        functools.partial(
-            asm_stage1,
-            kernelName=kernelName1,
-            activation=activation,
-            quant_type=q_type,
-        ),
-        functools.partial(
-            aiter.ck_moe_stage2_fwd,
-            kernelName=kernelName2,
-            activation=activation,
-            quant_type=q_type,
-        ),
-        block_m,
-        ksplit,
-        run_1stage,
-    )
+    
+    raise ValueError("Unsupported fmoe kernel config for", kernelName1)
 
 
 def fused_moe_2stages(
