@@ -166,44 +166,40 @@ def asm_moe_test(
 
 
 def pyisa_asm_moe_test(
-    hidden_states,
-    w1,
-    w2,
-    topk_weights,
-    topk_ids,
-    # following for int8 quant
-    fc1_scale=None,
-    fc2_scale=None,
-    a1_scale=None,
+    hidden_states:torch.Tensor,
+    w1:torch.Tensor,
+    w2:torch.Tensor,
+    topk_weights:torch.Tensor,
+    topk_ids:torch.Tensor,
+    fc1_scale:torch.Tensor,
+    fc2_scale:torch.Tensor,
+    a1_scale:torch.Tensor,
     scale_blk=(128, 128),
 ):
-
     model_dim = hidden_states.shape[-1]
-    topk = topk_ids.shape[-1]
+    #topk = topk_ids.shape[-1]
     E = w1.shape[0]
     sorted_token_ids, sorted_weights, sorted_expert_ids, num_valid_ids, out_pyisa = (
         moe_sorting(topk_ids, topk_weights, E, model_dim, dtype)
     )
     scale_blk_n, scale_blk_k = scale_blk
     pyisa_fmoe_fp8_blockscale_g1u1(
-        out_pyisa,
-        hidden_states,
-        w1,
-        w2,
-        sorted_token_ids,
-        sorted_weights,
-        sorted_expert_ids,
-        num_valid_ids,
-        topk,
-        a1_scale,
-        fc1_scale,
-        fc2_scale,
-        "",
-        scale_blk_n,
-        scale_blk_k,
-        None,
+        out=out_pyisa,
+        input=hidden_states,
+        gate=w1,
+        down=w2,
+        sorted_token_ids=sorted_token_ids,
+        sorted_weights=sorted_weights,
+        sorted_expert_ids=sorted_expert_ids,
+        num_valid_ids=num_valid_ids,
+        input_scale=a1_scale,
+        fc1_scale=fc1_scale,
+        fc2_scale=fc2_scale,
+        fc_scale_blkn=scale_blk_n,
+        fc_scale_blkk=scale_blk_k,
+        activation=None # default Silu
     )
-    return out_asm
+    return out_pyisa
 
 
 torch.set_default_device("cuda")
