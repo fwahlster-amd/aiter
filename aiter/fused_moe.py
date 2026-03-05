@@ -1732,7 +1732,7 @@ def cktile_moe_stage2(
     w2_scale,
     a2_scale,
     block_m,
-    activation=ActivationType.Swiglu,
+    activation=ActivationType.Silu,
     sorted_weights=None,
     zeros_out=False,
     n_pad_zeros=0,
