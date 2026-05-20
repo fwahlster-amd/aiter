@@ -15,8 +15,8 @@ import argparse
 BLOCK_SIZE_M = 32
 
 
-from pyisa.kernels.fmoe.aiter_interface import FMoEKernelRepo, GlobalFMoEKernelRepo, fmoe_fp8_blockscale_g1u1 as pyisa_fmoe_fp8_blockscale_g1u1
-KERNEL_REPO: FMoEKernelRepo = GlobalFMoEKernelRepo.get() # build & populate kernels before test
+from pyisa.kernels.fmoe.aiter_interface import FMoEKernelRepo, get_global_kernel_repo, fmoe_fp8_blockscale_g1u1 as pyisa_fmoe_fp8_blockscale_g1u1
+KERNEL_REPO: FMoEKernelRepo = get_global_kernel_repo()
 
 def torch_moe_blockscale(
     hidden_states,
