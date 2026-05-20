@@ -317,7 +317,7 @@ def test_fmoe(
     # msg = '111'
     # checkAllclose(out_ref, out_ref2, rtol=0.01, atol=100, msg=msg)
 
-    out_asm, us_ref = run_perftest(
+    out_asm, us_asm = run_perftest(
         asm_moe_test,
         a1_q, # output
         shuffle_weight(w1_q, (16, 16)),
@@ -329,8 +329,23 @@ def test_fmoe(
         a1_scale.t().contiguous(),
         (scale_blk_n, scale_blk_k),
     )
-    msg = f"[perf] a8w8 asm: {us_ref:>8.2f} us ...... {m=}, {model_dim=}, {inter_dim=}, {E=}, {shared_E=}, {topk=}, dtype: {dtype}"
+    msg = f"[perf] fmoe asm: {us_asm:>8.2f} us ...... {m=}, {model_dim=}, {inter_dim=}, {E=}, {shared_E=}, {topk=}, dtype: {dtype}"
     checkAllclose(out_ref, out_asm, rtol=0.05, atol=0.05, msg=msg)
+
+    out_pyisa, us_pyisa = run_perftest(
+        pyisa_moe_test,
+        a1_q, # output
+        shuffle_weight(w1_q, (16, 16)),
+        shuffle_weight(w2_q, (16, 16)),
+        topk_weights,
+        topk_ids,
+        w1_scale,
+        w2_scale,
+        a1_scale.t().contiguous(),
+        (scale_blk_n, scale_blk_k),
+    )
+    msg = f"[perf] fmoe asm: {us_pyisa:>8.2f} us ...... {m=}, {model_dim=}, {inter_dim=}, {E=}, {shared_E=}, {topk=}, dtype: {dtype}"
+    checkAllclose(out_pyisa, out_asm, rtol=0.05, atol=0.05, msg=msg)
 
 
 parser = argparse.ArgumentParser(
