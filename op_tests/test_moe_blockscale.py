@@ -15,6 +15,9 @@ import argparse
 BLOCK_SIZE_M = 32
 
 
+from pyisa.kernels.fmoe.aiter_interface import FMoEKernelRepo, GlobalFMoEKernelRepo, fmoe_fp8_blockscale_g1u1 as pyisa_fmoe_fp8_blockscale_g1u1
+KERNEL_REPO: FMoEKernelRepo = GlobalFMoEKernelRepo.get() # build & populate kernels before test
+
 def torch_moe_blockscale(
     hidden_states,
     w1,  # [expert, inter_dim*2, model_dim]
@@ -162,6 +165,48 @@ def asm_moe_test(
     )
     return out_asm
 
+def pyisa_moe_test(
+    hidden_states: torch.Tensor,
+    w1: torch.Tensor,
+    w2: torch.Tensor,
+    topk_weights: torch.Tensor,
+    topk_ids: torch.Tensor,
+    # following for int8 quant
+    fc1_scale: torch.Tensor,
+    fc2_scale: torch.Tensor,
+    a1_scale: torch.Tensor,
+    scale_blk=(128, 128),
+):
+
+    model_dim = hidden_states.shape[-1]
+    topk = topk_ids.shape[-1]
+    E = w1.shape[0]
+    # (sorted_ids, sorted_weights, sorted_expert_ids, num_valid_ids, moe_buf)
+    sorted_token_ids, sorted_weights, sorted_expert_ids, num_valid_ids, out_asm = (
+        moe_sorting(topk_ids, topk_weights, E, model_dim, dtype)
+    )
+    scale_blk_n, scale_blk_k = scale_blk
+    pyisa_fmoe_fp8_blockscale_g1u1(
+        out=out_asm,
+        input=hidden_states,
+        gate=w1,
+        down=w2,
+        sorted_token_ids=sorted_token_ids,
+        sorted_weights=sorted_weights,
+        sorted_expert_ids=sorted_expert_ids,
+        num_valid_ids=num_valid_ids,
+        # topk, not used by kernel
+        input_scale=a1_scale,
+        fc1_scale=fc1_scale,
+        fc2_scale=fc2_scale,
+        # "",
+        fc_scale_blkn=scale_blk_n,
+        fc_scale_blkk=scale_blk_k,
+        #activation=ActivationType.Silu.value,
+        kernels=KERNEL_REPO
+    )
+    return out_asm
+
 
 torch.set_default_device("cuda")
 
@@ -274,7 +319,7 @@ def test_fmoe(
 
     out_asm, us_ref = run_perftest(
         asm_moe_test,
-        a1_q,
+        a1_q, # output
         shuffle_weight(w1_q, (16, 16)),
         shuffle_weight(w2_q, (16, 16)),
         topk_weights,
